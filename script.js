@@ -30,6 +30,8 @@ let state = {
   timeLeft: 0,
   timeTotal: 10,
   currentAnswer: null,
+  currentHint: "",
+  hintOpen: false,
   locked: false,
 };
 
@@ -58,8 +60,8 @@ function makeChoices(correct, spread, allowNegative = false) {
   return shuffle([...set]);
 }
 
-function q(text, answer, choices) {
-  return { text, answer, choices };
+function q(text, answer, choices, hint) {
+  return { text, answer, choices, hint };
 }
 
 /* ---------- SPEED DRILL generators ----------
@@ -69,53 +71,63 @@ const SPEED_GENERATORS = {
     const type = randInt(0, 1);
     if (type === 0) {
       const a = randInt(0, 5), b = randInt(0, 5);
-      return q(`${a} + ${b} = ?`, a + b, makeChoices(a + b, 3));
+      return q(`${a} + ${b} = ?`, a + b, makeChoices(a + b, 3),
+        `Count up: start at ${a} and count ${b} more on your fingers.`);
     }
     const a = randInt(1, 9), b = randInt(0, a);
-    return q(`${a} - ${b} = ?`, a - b, makeChoices(a - b, 3));
+    return q(`${a} - ${b} = ?`, a - b, makeChoices(a - b, 3),
+      `Start at ${a} and count back ${b}.`);
   },
 
   1: () => {
     const type = randInt(0, 1);
     if (type === 0) {
       const a = randInt(0, 20), b = randInt(0, 20 - a);
-      return q(`${a} + ${b} = ?`, a + b, makeChoices(a + b, 4));
+      return q(`${a} + ${b} = ?`, a + b, makeChoices(a + b, 4),
+        `Add the ones first, then the tens if you need to. ${a} + ${b}.`);
     }
     const a = randInt(0, 20), b = randInt(0, a);
-    return q(`${a} - ${b} = ?`, a - b, makeChoices(a - b, 4));
+    return q(`${a} - ${b} = ?`, a - b, makeChoices(a - b, 4),
+      `Think "${b} plus what equals ${a}?" — that missing number is your answer.`);
   },
 
   2: () => {
     const type = randInt(0, 1);
     if (type === 0) {
       const a = randInt(10, 99), b = randInt(1, 20);
-      return q(`${a} + ${b} = ?`, a + b, makeChoices(a + b, 5));
+      return q(`${a} + ${b} = ?`, a + b, makeChoices(a + b, 5),
+        `Add the ones digits first, then add the tens digits.`);
     }
     const a = randInt(10, 99), b = randInt(0, 20);
     const safeB = Math.min(a, b);
-    return q(`${a} - ${safeB} = ?`, a - safeB, makeChoices(a - safeB, 5));
+    return q(`${a} - ${safeB} = ?`, a - safeB, makeChoices(a - safeB, 5),
+      `Subtract the ones first, then the tens. If the ones don't fit, borrow a ten.`);
   },
 
   3: () => {
     const type = randInt(0, 1);
     if (type === 0) {
       const a = randInt(2, 10), b = randInt(2, 10);
-      return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 6));
+      return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 6),
+        `Think of it as ${a} groups of ${b}, or use the ${a} times table.`);
     }
     const b = randInt(2, 10), ans = randInt(2, 10);
     const product = b * ans;
-    return q(`${product} ÷ ${b} = ?`, ans, makeChoices(ans, 3));
+    return q(`${product} ÷ ${b} = ?`, ans, makeChoices(ans, 3),
+      `Ask yourself: "${b} times what number equals ${product}?"`);
   },
 
   4: () => {
     const type = randInt(0, 1);
     if (type === 0) {
       const a = randInt(11, 50), b = randInt(2, 9);
-      return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 10));
+      return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 10),
+        `Break ${a} into tens and ones, multiply each by ${b}, then add the results.`);
     }
     const b = randInt(2, 9), ans = randInt(10, 20);
     const product = b * ans;
-    return q(`${product} ÷ ${b} = ?`, ans, makeChoices(ans, 5));
+    return q(`${product} ÷ ${b} = ?`, ans, makeChoices(ans, 5),
+      `Ask yourself: "${b} times what number equals ${product}?"`);
   },
 
   5: () => {
@@ -127,14 +139,14 @@ const SPEED_GENERATORS = {
       const sum = a + b;
       return q(`${a}/${d} + ${b}/${d} = ?`, `${sum}/${d}`, shuffle([
         `${sum}/${d}`, `${sum + 1}/${d}`, `${sum}/${d + 1}`, `${Math.max(1, sum - 1)}/${d}`
-      ]));
+      ]), `Same denominator (bottom number), so just add the numerators (top numbers): ${a} + ${b}. Keep the ${d} on the bottom.`);
     }
     const a = (randInt(10, 99) / 10).toFixed(1);
     const b = (randInt(10, 99) / 10).toFixed(1);
     const sum = (parseFloat(a) + parseFloat(b)).toFixed(1);
     return q(`${a} + ${b} = ?`, sum, shuffle([
       sum, (parseFloat(sum) + 0.1).toFixed(1), (parseFloat(sum) - 0.1).toFixed(1), (parseFloat(sum) + 1).toFixed(1)
-    ]));
+    ]), `Line up the decimal points and add like whole numbers, then bring the decimal point straight down.`);
   },
 
   6: () => {
@@ -143,20 +155,24 @@ const SPEED_GENERATORS = {
       const pct = [10, 20, 25, 50, 75][randInt(0, 4)];
       const base = randInt(1, 40) * 4;
       const answer = (pct / 100) * base;
-      return q(`${pct}% of ${base} = ?`, answer, makeChoices(answer, Math.max(4, Math.round(answer * 0.3))));
+      return q(`${pct}% of ${base} = ?`, answer, makeChoices(answer, Math.max(4, Math.round(answer * 0.3))),
+        `Turn the percent into a decimal by dividing by 100 (${pct}% = ${pct / 100}), then multiply: ${pct / 100} × ${base}.`);
     }
     const a = randInt(-15, 15), b = randInt(-15, 15);
-    return q(`${a} + (${b}) = ?`, a + b, makeChoices(a + b, 6, true));
+    return q(`${a} + (${b}) = ?`, a + b, makeChoices(a + b, 6, true),
+      `Adding a negative is the same as subtracting. Find the difference between the two numbers, and keep the sign of whichever is bigger.`);
   },
 
   7: () => {
     const type = randInt(0, 1);
     if (type === 0) {
       const a = randInt(-15, 15), b = randInt(-15, 15);
-      return q(`${a} - (${b}) = ?`, a - b, makeChoices(a - b, 8, true));
+      return q(`${a} - (${b}) = ?`, a - b, makeChoices(a - b, 8, true),
+        `Subtracting a negative is the same as adding: ${a} - (${b}) = ${a} + ${-b}.`);
     }
     const a = randInt(-10, 10) || 3, b = randInt(-10, 10) || 4;
-    return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 10, true));
+    return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 10, true),
+      `Same signs (both + or both −) give a positive answer. Different signs give a negative answer. First multiply ${Math.abs(a)} × ${Math.abs(b)}, then apply the sign rule.`);
   },
 
   8: () => {
@@ -164,11 +180,13 @@ const SPEED_GENERATORS = {
     if (type === 0) {
       const n = [4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144][randInt(0, 10)];
       const answer = Math.sqrt(n);
-      return q(`√${n} = ?`, answer, makeChoices(answer, 4));
+      return q(`√${n} = ?`, answer, makeChoices(answer, 4),
+        `Ask yourself: "what number times itself equals ${n}?"`);
     }
     const base = randInt(2, 6), exp = randInt(2, 3);
     const answer = Math.pow(base, exp);
-    return q(`${base}^${exp} = ?`, answer, makeChoices(answer, Math.max(5, Math.round(answer * 0.3))));
+    return q(`${base}^${exp} = ?`, answer, makeChoices(answer, Math.max(5, Math.round(answer * 0.3))),
+      `${base}^${exp} means multiply ${base} by itself ${exp} time${exp > 1 ? "s" : ""}: ${Array(exp).fill(base).join(" × ")}.`);
   },
 };
 
@@ -177,27 +195,32 @@ const SPEED_GENERATORS = {
 const CHALLENGE_GENERATORS = {
   K: () => {
     const a = randInt(1, 5), b = randInt(1, 5), c = randInt(1, 5);
-    return q(`${a} + ${b} + ${c} = ?`, a + b + c, makeChoices(a + b + c, 3));
+    return q(`${a} + ${b} + ${c} = ?`, a + b + c, makeChoices(a + b + c, 3),
+      `Add two numbers first, then add the third: (${a} + ${b}) + ${c}.`);
   },
 
   1: () => {
     const a = randInt(1, 10), b = randInt(1, 10), c = randInt(1, 10);
-    return q(`${a} + ${b} - ${c} = ?`, a + b - c, makeChoices(a + b - c, 4, true));
+    return q(`${a} + ${b} - ${c} = ?`, a + b - c, makeChoices(a + b - c, 4, true),
+      `Work left to right: first ${a} + ${b}, then subtract ${c} from that result.`);
   },
 
   2: () => {
     const a = randInt(20, 99), b = randInt(10, 50), c = randInt(1, 20);
-    return q(`${a} - ${b} + ${c} = ?`, a - b + c, makeChoices(a - b + c, 6, true));
+    return q(`${a} - ${b} + ${c} = ?`, a - b + c, makeChoices(a - b + c, 6, true),
+      `Work left to right: first ${a} - ${b}, then add ${c} to that result.`);
   },
 
   3: () => {
     const a = randInt(2, 9), b = randInt(2, 9), c = randInt(1, 10);
-    return q(`${a} × ${b} + ${c} = ?`, a * b + c, makeChoices(a * b + c, 8));
+    return q(`${a} × ${b} + ${c} = ?`, a * b + c, makeChoices(a * b + c, 8),
+      `Multiplication comes before addition: first find ${a} × ${b}, then add ${c}.`);
   },
 
   4: () => {
     const a = randInt(2, 9), b = randInt(10, 30), c = randInt(1, 20);
-    return q(`${a} × ${b} - ${c} = ?`, a * b - c, makeChoices(a * b - c, 15));
+    return q(`${a} × ${b} - ${c} = ?`, a * b - c, makeChoices(a * b - c, 15),
+      `Multiplication comes before subtraction: first find ${a} × ${b}, then subtract ${c}.`);
   },
 
   5: () => {
@@ -209,11 +232,12 @@ const CHALLENGE_GENERATORS = {
       const commonNum = a * (d2 / d1) + b;
       return q(`${a}/${d1} + ${b}/${d2} = ?`, `${commonNum}/${d2}`, shuffle([
         `${commonNum}/${d2}`, `${commonNum + 1}/${d2}`, `${commonNum}/${d1}`, `${Math.max(1, commonNum - 2)}/${d2}`
-      ]));
+      ]), `Different denominators, so first convert ${a}/${d1} to an equivalent fraction over ${d2} (multiply top and bottom by ${d2 / d1}), then add the numerators.`);
     }
     const a = randInt(2, 20), b = randInt(2, 12), c = randInt(2, 12), d = randInt(1, 20);
     const answer = (a + b) * c - d;
-    return q(`(${a} + ${b}) × ${c} - ${d} = ?`, answer, makeChoices(answer, 12));
+    return q(`(${a} + ${b}) × ${c} - ${d} = ?`, answer, makeChoices(answer, 12),
+      `Parentheses first: ${a} + ${b}. Then multiply that by ${c}. Then subtract ${d}.`);
   },
 
   6: () => {
@@ -222,10 +246,12 @@ const CHALLENGE_GENERATORS = {
       const pct = [15, 30, 40, 60, 12][randInt(0, 4)];
       const base = randInt(5, 60) * 5;
       const answer = Math.round((pct / 100) * base);
-      return q(`What is ${pct}% of ${base}?`, answer, makeChoices(answer, Math.max(5, Math.round(answer * 0.25))));
+      return q(`What is ${pct}% of ${base}?`, answer, makeChoices(answer, Math.max(5, Math.round(answer * 0.25))),
+        `Turn ${pct}% into a decimal (${pct / 100}) and multiply by ${base}.`);
     }
     const a = randInt(-15, 15), b = randInt(-15, 15), c = randInt(-15, 15);
-    return q(`${a} + ${b} - (${c}) = ?`, a + b - c, makeChoices(a + b - c, 10, true));
+    return q(`${a} + ${b} - (${c}) = ?`, a + b - c, makeChoices(a + b - c, 10, true),
+      `Work left to right. Remember: subtracting a negative is the same as adding.`);
   },
 
   7: () => {
@@ -234,11 +260,13 @@ const CHALLENGE_GENERATORS = {
       const m = randInt(2, 9), b = randInt(-15, 15), x = randInt(-10, 10);
       const result = m * x + b;
       const sign = b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
-      return q(`${m}x ${sign} = ${result}. What is x?`, x, makeChoices(x, 6, true));
+      return q(`${m}x ${sign} = ${result}. What is x?`, x, makeChoices(x, 6, true),
+        `Undo the addition/subtraction first (move ${b} to the other side), then divide both sides by ${m}.`);
     }
     const b1 = randInt(2, 9), mult = randInt(2, 5), a1 = randInt(2, 9);
     const b2 = b1 * mult, x = a1 * mult;
-    return q(`${a1}/${b1} is proportional to x/${b2}. What is x?`, x, makeChoices(x, 5));
+    return q(`${a1}/${b1} is proportional to x/${b2}. What is x?`, x, makeChoices(x, 5),
+      `Cross-multiply: ${a1} × ${b2} = ${b1} × x, then divide both sides by ${b1}.`);
   },
 
   8: () => {
@@ -246,15 +274,18 @@ const CHALLENGE_GENERATORS = {
     if (type === 0) {
       const x = randInt(1, 15), m = randInt(2, 8), b = randInt(1, 30), n = randInt(2, 6);
       const result = m * x + b + n * x;
-      return q(`${m}x + ${b} + ${n}x = ${result}. What is x?`, x, makeChoices(x, 6, true));
+      return q(`${m}x + ${b} + ${n}x = ${result}. What is x?`, x, makeChoices(x, 6, true),
+        `Combine the x-terms first: ${m}x + ${n}x = ${m + n}x. Then solve ${m + n}x + ${b} = ${result} like a one-step equation.`);
     }
     if (type === 1) {
       const legs = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15]][randInt(0, 4)];
-      return q(`A right triangle has legs ${legs[0]} and ${legs[1]}. What is the hypotenuse?`, legs[2], makeChoices(legs[2], 4));
+      return q(`A right triangle has legs ${legs[0]} and ${legs[1]}. What is the hypotenuse?`, legs[2], makeChoices(legs[2], 4),
+        `Use the Pythagorean theorem: a² + b² = c². So ${legs[0]}² + ${legs[1]}² = c².`);
     }
     const base = randInt(2, 5), exp1 = randInt(2, 3), exp2 = randInt(2, 3);
     const answer = Math.pow(base, exp1 + exp2);
-    return q(`${base}^${exp1} × ${base}^${exp2} = ${base}^?`, exp1 + exp2, makeChoices(exp1 + exp2, 3));
+    return q(`${base}^${exp1} × ${base}^${exp2} = ${base}^?`, exp1 + exp2, makeChoices(exp1 + exp2, 3),
+      `Same base being multiplied? Add the exponents: ${exp1} + ${exp2}.`);
   },
 };
 
@@ -339,6 +370,8 @@ function startGame(gradeId, mode) {
     timeLeft: grade.time,
     timeTotal: grade.time,
     currentAnswer: null,
+    currentHint: "",
+    hintOpen: false,
     locked: false,
   };
   document.getElementById("gradePill").textContent = `${grade.name} • ${MODES[mode].label}`;
@@ -367,12 +400,21 @@ function updateScore() {
 
 function nextQuestion() {
   state.locked = false;
+  state.hintOpen = false;
   document.getElementById("feedback").textContent = "";
   document.getElementById("feedback").className = "feedback";
+
+  const hintBtn = document.getElementById("hintBtn");
+  const hintPanel = document.getElementById("hintPanel");
+  hintBtn.textContent = "❓ I don't understand";
+  hintBtn.disabled = false;
+  hintPanel.classList.add("hidden");
+  hintPanel.textContent = "";
 
   const gen = getGenerator(state.grade.id, state.mode);
   const question = gen();
   state.currentAnswer = question.answer;
+  state.currentHint = question.hint;
 
   document.getElementById("questionText").textContent = question.text;
 
@@ -391,13 +433,36 @@ function nextQuestion() {
   }
 }
 
+function toggleHint() {
+  if (state.locked) return;
+  const hintBtn = document.getElementById("hintBtn");
+  const hintPanel = document.getElementById("hintPanel");
+
+  state.hintOpen = !state.hintOpen;
+  if (state.hintOpen) {
+    hintPanel.textContent = state.currentHint;
+    hintPanel.classList.remove("hidden");
+    hintBtn.textContent = "✕ Close hint";
+    if (MODES[state.mode].timed) clearInterval(state.timer);
+  } else {
+    hintPanel.classList.add("hidden");
+    hintBtn.textContent = "❓ I don't understand";
+    if (MODES[state.mode].timed) runTimerTick();
+  }
+}
+
 function startTimer() {
   clearInterval(state.timer);
   state.timeLeft = state.timeTotal;
   const fill = document.getElementById("timerFill");
   fill.style.width = "100%";
   fill.className = "timer-fill";
+  runTimerTick();
+}
 
+function runTimerTick() {
+  clearInterval(state.timer);
+  const fill = document.getElementById("timerFill");
   const tickMs = 100;
   state.timer = setInterval(() => {
     state.timeLeft -= tickMs / 1000;
@@ -420,6 +485,7 @@ function handleAnswer(choice, btn) {
 
   const buttons = [...document.querySelectorAll(".choice-btn")];
   buttons.forEach(b => b.disabled = true);
+  document.getElementById("hintBtn").disabled = true;
 
   const isCorrect = choice !== null && String(choice) === String(state.currentAnswer);
   const feedback = document.getElementById("feedback");
@@ -496,6 +562,7 @@ document.getElementById("backToDashBtn").addEventListener("click", () => {
   showView("dashboard");
   renderDashboard();
 });
+document.getElementById("hintBtn").addEventListener("click", toggleHint);
 
 /* ---------- Init ---------- */
 renderDashboard();
