@@ -102,7 +102,7 @@ html, body {
   max-width: 1100px;
 }
 
-.view.hidden { display: none; }
+.hidden { display: none !important; }
 
 .main-header h1 {
   margin: 0 0 6px 0;
@@ -169,23 +169,30 @@ html, body {
 }
 
 .grade-best {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   margin-top: 4px;
 }
 
-.start-btn {
+.mode-btn-row {
   margin-top: 8px;
-  background: var(--ka-blue);
-  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-btn {
   border: none;
   padding: 10px;
   border-radius: 10px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
 }
-.start-btn:hover { background: var(--ka-blue-dark); }
+.speed-btn { background: var(--ka-blue); color: white; }
+.speed-btn:hover { background: var(--ka-blue-dark); }
+.challenge-btn { background: #eef1f8; color: var(--text); }
+.challenge-btn:hover { background: #e1e5ee; }
 
 /* Game view */
 .game-topbar {
@@ -236,6 +243,18 @@ html, body {
 }
 .timer-fill.warn { background: var(--ka-yellow); }
 .timer-fill.danger { background: var(--ka-red); }
+
+.untimed-note {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ka-blue);
+  background: #eaf1ff;
+  border-radius: 20px;
+  padding: 8px 14px;
+  margin: 0 auto 26px auto;
+  max-width: 320px;
+}
 
 .question-card {
   background: var(--card-bg);
