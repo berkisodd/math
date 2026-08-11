@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathDash</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">🧮</span>
+      <span class="logo-text">MathDash</span>
+    </div>
+    <nav class="side-nav">
+      <button class="side-link active" data-nav="dashboard">
+        <span class="side-icon">🏠</span> Dashboard
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="streak-box">
+        <span class="streak-icon">🔥</span>
+        <div>
+          <div class="streak-num" id="streakNum">0</div>
+          <div class="streak-label">day streak</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- DASHBOARD VIEW -->
+    <section id="dashboardView" class="view">
+      <header class="main-header">
+        <h1>Choose your grade</h1>
+        <p class="subtitle">Answer fast, keep your 4 lives, and beat your best score!</p>
+      </header>
+      <div class="grade-grid" id="gradeGrid"></div>
+    </section>
+
+    <!-- GAME VIEW -->
+    <section id="gameView" class="view hidden">
+      <div class="game-topbar">
+        <button class="quit-btn" id="quitBtn">✕</button>
+        <div class="lives" id="livesBox"></div>
+        <div class="score-box">⭐ <span id="scoreNum">0</span></div>
+      </div>
+
+      <div class="timer-track">
+        <div class="timer-fill" id="timerFill"></div>
+      </div>
+
+      <div class="question-card">
+        <div class="grade-pill" id="gradePill"></div>
+        <h2 class="question-text" id="questionText">Loading...</h2>
+        <div class="choices-grid" id="choicesGrid"></div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+    </section>
+
+    <!-- RESULTS VIEW -->
+    <section id="resultsView" class="view hidden">
+      <div class="results-card">
+        <div class="results-icon" id="resultsIcon">🏁</div>
+        <h1 id="resultsTitle">Game Over!</h1>
+        <p class="results-sub" id="resultsSub"></p>
+        <div class="results-stats">
+          <div class="stat">
+            <div class="stat-num" id="finalScore">0</div>
+            <div class="stat-label">Score</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="finalCorrect">0</div>
+            <div class="stat-label">Correct</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="finalBest">0</div>
+            <div class="stat-label">Best Score</div>
+          </div>
+        </div>
+        <div class="results-actions">
+          <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+          <button class="btn btn-secondary" id="backToDashBtn">Choose Another Grade</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
