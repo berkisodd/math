@@ -325,6 +325,35 @@ html, body {
 .feedback.good { color: var(--ka-green); }
 .feedback.bad { color: var(--ka-red); }
 
+.hint-btn {
+  margin-top: 20px;
+  background: none;
+  border: none;
+  color: var(--ka-blue);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.hint-btn:hover { background: #eaf1ff; }
+.hint-btn:disabled { color: var(--text-muted); cursor: default; background: none; }
+
+.hint-panel {
+  margin-top: 12px;
+  background: #fff7e6;
+  border: 1px solid #ffe4a8;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b4e00;
+  text-align: left;
+}
+.hint-panel::before {
+  content: "💡 ";
+}
+
 /* Results */
 .results-card {
   background: var(--card-bg);
