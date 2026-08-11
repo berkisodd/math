@@ -110,22 +110,23 @@ const SPEED_GENERATORS = {
   4: () => {
     const type = randInt(0, 1);
     if (type === 0) {
-      const a = randInt(11, 99), b = randInt(2, 9);
-      return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 12));
+      const a = randInt(11, 50), b = randInt(2, 9);
+      return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 10));
     }
-    const b = randInt(2, 9), ans = randInt(10, 30);
+    const b = randInt(2, 9), ans = randInt(10, 20);
     const product = b * ans;
-    return q(`${product} ÷ ${b} = ?`, ans, makeChoices(ans, 6));
+    return q(`${product} ÷ ${b} = ?`, ans, makeChoices(ans, 5));
   },
 
   5: () => {
     const type = randInt(0, 1);
     if (type === 0) {
-      const d = randInt(2, 10);
-      const a = randInt(1, d - 1), b = randInt(1, d - 1 - a >= 1 ? d - 1 - a : 1);
-      const sum = Math.min(a + b, d - 1) || 1;
-      return q(`${a}/${d} + ${b}/${d} = ?`, `${a + b}/${d}`, shuffle([
-        `${a + b}/${d}`, `${a + b + 1}/${d}`, `${a + b}/${d + 1}`, `${Math.max(1, a + b - 1)}/${d}`
+      const d = randInt(3, 10);
+      const a = randInt(1, d - 2);
+      const b = randInt(1, d - 1 - a);
+      const sum = a + b;
+      return q(`${a}/${d} + ${b}/${d} = ?`, `${sum}/${d}`, shuffle([
+        `${sum}/${d}`, `${sum + 1}/${d}`, `${sum}/${d + 1}`, `${Math.max(1, sum - 1)}/${d}`
       ]));
     }
     const a = (randInt(10, 99) / 10).toFixed(1);
@@ -144,27 +145,26 @@ const SPEED_GENERATORS = {
       const answer = (pct / 100) * base;
       return q(`${pct}% of ${base} = ?`, answer, makeChoices(answer, Math.max(4, Math.round(answer * 0.3))));
     }
-    const a = randInt(-20, 20), b = randInt(-20, 20);
-    return q(`${a} + (${b}) = ?`, a + b, makeChoices(a + b, 8, true));
+    const a = randInt(-15, 15), b = randInt(-15, 15);
+    return q(`${a} + (${b}) = ?`, a + b, makeChoices(a + b, 6, true));
   },
 
   7: () => {
     const type = randInt(0, 1);
     if (type === 0) {
-      const a = randInt(-25, 25), b = randInt(-25, 25);
-      return q(`${a} - (${b}) = ?`, a - b, makeChoices(a - b, 10, true));
+      const a = randInt(-15, 15), b = randInt(-15, 15);
+      return q(`${a} - (${b}) = ?`, a - b, makeChoices(a - b, 8, true));
     }
-    const a = randInt(-12, 12) || 3, b = randInt(-12, 12) || 4;
-    return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 12, true));
+    const a = randInt(-10, 10) || 3, b = randInt(-10, 10) || 4;
+    return q(`${a} × ${b} = ?`, a * b, makeChoices(a * b, 10, true));
   },
 
   8: () => {
     const type = randInt(0, 1);
     if (type === 0) {
-      const x = randInt(1, 20);
-      const b = randInt(1, 20);
-      const result = x + b;
-      return q(`x + ${b} = ${result}. What is x?`, x, makeChoices(x, 6, true));
+      const n = [4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144][randInt(0, 10)];
+      const answer = Math.sqrt(n);
+      return q(`√${n} = ?`, answer, makeChoices(answer, 4));
     }
     const base = randInt(2, 6), exp = randInt(2, 3);
     const answer = Math.pow(base, exp);
